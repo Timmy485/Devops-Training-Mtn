@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecodevsec-deployment
+  labels:
+    app.kubernetes.io/name: ecodevsec-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecodevsec-deployment
+  template:
+    metadata:
+      labels:
+        app: ecodevsec-deployment
+    spec:
+      containers:
+        - name: ecodevsec-deployment
+          image: 600197618921.dkr.ecr.eu-west-2.amazonaws.com/ecobank:ecodevsec-76
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: dls-port
+              protocol: TCP
+
+          # Load environment variables from configmap (flat key-value style)
+          envFrom:
+            - configMapRef:
+                name: ecodevsec-configmap
+          resources:
+            limits:
+              memory: "1200Mi"
+            requests:
+              memory: "1000Mi"
+
+      volumes:
+        - name: ecodevsec-volume
+          configMap:
+            name: ecodevsec-configmap
+            items:
+              - key: application.properties
+                path: application.properties

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecodevsec-configmap
+data:
+  SPRING_DATASOURCE_DRIVER_CLASS_NAME: oracle.jdbc.driver.OracleDriver
+  SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+  SPRING_DATASOURCE_HIKARI_MINIMUMIDLE: "10"
+  SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE: "20"

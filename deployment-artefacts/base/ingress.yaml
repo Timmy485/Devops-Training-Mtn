@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ecodevsec-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: nginx  # Updated ingress class
+  rules:
+    - host: clouddev.ecobank.com
+      http:
+        paths:
+          - path: /ecodevsec-intg/(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ecodevsec-svc
+                port:
+                  number: 3001

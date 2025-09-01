@@ -1,0 +1,261 @@
+# Cursor Rules for DevSecOps Agent
+
+## Tech Stack
+- **Backend**: Express.js with Node.js 18+
+- **Command Execution**: Google Zx for shell command execution
+- **Containerization**: Docker with Alpine Linux
+- **Kubernetes**: kubectl client and stern for log streaming
+- **Validation**: Joi for request validation
+- **Logging**: Winston for structured logging
+- **Security**: API key authentication, rate limiting, command validation
+
+## Architecture Overview
+
+### Core Components
+- **Command Executor**: Uses Google Zx to execute kubectl, stern, curl, telnet, nslookup, ping
+- **API Routes**: Kubernetes operations and connectivity testing endpoints
+- **Middleware**: Authentication, validation, rate limiting, error handling
+- **Security**: Command validation, input sanitization, RBAC-based access
+
+### Container Features
+- **Multi-tool Image**: Includes all required command-line utilities
+- **Non-root Execution**: Runs with minimal privileges (user 1001)
+- **Health Checks**: Kubernetes-ready probes for liveness and readiness
+- **Resource Limits**: Configurable CPU and memory constraints
+
+## Code Organization
+
+### File Structure
+```
+Agent/
+├── app.js                 # Main Express application
+├── package.json           # Dependencies and scripts
+├── Dockerfile            # Multi-tool container definition
+├── docker-compose.yml    # Local development setup
+├── k8s/                  # Kubernetes deployment manifests
+├── middlewares/          # Express middleware (auth, validation, rate limiting)
+├── routes/               # API route definitions (k8s, connectivity, health)
+├── utils/                # Utilities (logger, command executor)
+├── test/                 # Test files
+└── logs/                 # Application logs
+```
+
+### Naming Conventions
+- **Files**: kebab-case (e.g., `command-executor.js`)
+- **Functions**: camelCase (e.g., `executeKubectl`)
+- **Variables**: camelCase (e.g., `commandTimeout`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_COMMAND_OUTPUT_SIZE`)
+- **API Endpoints**: RESTful with kebab-case (e.g., `/api/k8s/execute`)
+
+## Security Guidelines
+
+### Command Execution
+- **Validation**: All commands must pass security validation
+- **Blocklist**: Dangerous commands are blocked (rm, sudo, chmod, etc.)
+- **Timeout**: Commands have configurable execution timeouts
+- **Output Limits**: Maximum output size to prevent memory issues
+- **Non-root**: Container runs with minimal privileges
+
+### API Security
+- **Authentication**: API key required for all protected endpoints
+- **Rate Limiting**: Configurable per-IP rate limiting
+- **Input Validation**: Joi schemas for all request data
+- **CORS**: Configurable cross-origin resource sharing
+- **HTTPS**: TLS required in production
+
+### Kubernetes Access
+- **RBAC**: Minimal required permissions via service account
+- **Read-only**: Default read-only access to resources
+- **Namespace Isolation**: Respect namespace boundaries
+- **Audit Logging**: All operations are logged
+
+## Command Execution Guidelines
+
+### Google Zx Usage
+```javascript
+// Good - Proper error handling and timeout
+const result = await $`kubectl get pods -n ${namespace}`;
+if (result.exitCode !== 0) {
+  throw new Error(`Command failed: ${result.stderr}`);
+}
+
+// Good - Command validation before execution
+if (!commandExecutor.validateCommand(command)) {
+  throw new Error('Command blocked for security reasons');
+}
+```
+
+### Command Validation
+```javascript
+// Good - Comprehensive blocklist
+const blockedCommands = [
+  'rm -rf', 'dd if=', 'mkfs', 'fdisk',
+  'mount', 'umount', 'chmod 777', 'chown root',
+  'sudo', 'su', 'passwd', 'useradd'
+];
+
+// Good - Input sanitization
+const sanitizedCommand = command.replace(/[;&|`$]/g, '');
+```
+
+## API Design Guidelines
+
+### RESTful Endpoints
+- **GET**: Retrieve information (pods, services, deployments)
+- **POST**: Execute commands and tests (kubectl, connectivity)
+- **Consistent Response Format**: Success/error with standardized structure
+- **Proper HTTP Status Codes**: 200, 400, 401, 403, 404, 429, 500
+
+### Response Format
+```javascript
+// Success Response
+{
+  "success": true,
+  "command": "kubectl get pods",
+  "stdout": "pod output...",
+  "stderr": "",
+  "exitCode": 0,
+  "executionTime": 150,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+
+// Error Response
+{
+  "error": {
+    "message": "Command execution failed",
+    "statusCode": 500,
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "path": "/api/k8s/execute"
+  }
+}
+```
+
+## Error Handling
+
+### Command Execution Errors
+- **Timeout Handling**: Graceful timeout with proper error messages
+- **Permission Errors**: Clear messages about access restrictions
+- **Resource Errors**: Informative messages about missing resources
+- **Network Errors**: Connection and DNS resolution error handling
+
+### API Error Handling
+- **Validation Errors**: Detailed field-level error messages
+- **Authentication Errors**: Clear API key requirements
+- **Rate Limit Errors**: Retry-after headers and limits
+- **Server Errors**: Generic messages in production, detailed in development
+
+## Logging Guidelines
+
+### Winston Configuration
+```javascript
+// Good - Structured logging with context
+logger.info('Kubernetes command executed', {
+  command: 'kubectl get pods',
+  namespace: 'default',
+  executionTime: 150,
+  exitCode: 0
+});
+
+// Good - Error logging with stack traces
+logger.error('Command execution failed', {
+  command: 'kubectl get pods',
+  error: error.message,
+  stack: error.stack,
+  exitCode: error.exitCode
+});
+```
+
+### Log Levels
+- **error**: Command failures, authentication errors, system issues
+- **warn**: Rate limit exceeded, validation failures, deprecated usage
+- **info**: Successful operations, health checks, startup/shutdown
+- **debug**: Detailed command execution, request/response details
+
+## Testing Guidelines
+
+### Test Structure
+- **Unit Tests**: Individual function and middleware testing
+- **Integration Tests**: API endpoint testing with supertest
+- **Security Tests**: Command validation and authentication testing
+- **Performance Tests**: Command execution timeout and output limit testing
+
+### Test Examples
+```javascript
+// Good - Comprehensive endpoint testing
+test('POST /api/k8s/execute should require authentication', async () => {
+  const response = await request(app)
+    .post('/api/k8s/execute')
+    .send({ command: 'get pods' })
+    .expect(401);
+  
+  expect(response.body.error).toBe('API key required');
+});
+
+// Good - Command validation testing
+test('Should block dangerous commands', () => {
+  expect(commandExecutor.validateCommand('rm -rf /')).toBe(false);
+  expect(commandExecutor.validateCommand('sudo su')).toBe(false);
+});
+```
+
+## Performance Guidelines
+
+### Command Execution
+- **Timeout Management**: Configurable per-command timeouts
+- **Output Truncation**: Prevent memory issues with large outputs
+- **Concurrent Execution**: Support for parallel command execution
+- **Resource Monitoring**: Track CPU and memory usage
+
+### API Performance
+- **Rate Limiting**: Prevent API abuse and ensure fair usage
+- **Response Caching**: Cache frequently requested data
+- **Connection Pooling**: Efficient database and external service connections
+- **Async Operations**: Non-blocking command execution
+
+## Deployment Guidelines
+
+### Docker Best Practices
+- **Multi-stage Builds**: Optimize image size
+- **Security Scanning**: Regular vulnerability scans
+- **Layer Caching**: Efficient build and deployment
+- **Health Checks**: Container health monitoring
+
+### Kubernetes Deployment
+- **Resource Limits**: CPU and memory constraints
+- **Security Context**: Non-root execution, read-only filesystem
+- **Probes**: Liveness and readiness health checks
+- **RBAC**: Minimal required permissions
+- **Network Policies**: Restrict network access
+
+## Monitoring and Observability
+
+### Health Checks
+- **Liveness Probe**: Container health status
+- **Readiness Probe**: Service readiness for traffic
+- **Detailed Health**: System resource information
+- **Metrics Endpoint**: Prometheus-compatible metrics
+
+### Logging and Tracing
+- **Structured Logs**: JSON format for easy parsing
+- **Request Tracing**: Track request flow through the system
+- **Performance Metrics**: Command execution timing
+- **Error Tracking**: Comprehensive error logging
+
+## Security Best Practices
+
+### Container Security
+- **Non-root User**: Run as unprivileged user (1001)
+- **Read-only Filesystem**: Minimize attack surface
+- **Capability Dropping**: Remove unnecessary capabilities
+- **Seccomp Profiles**: Restrict system calls
+
+### Network Security
+- **TLS Encryption**: HTTPS for all external communication
+- **Network Policies**: Restrict pod-to-pod communication
+- **Service Mesh**: Consider Istio for advanced networking
+- **API Gateway**: Rate limiting and authentication
+
+---
+
+**Note**: This Agent is designed for production use in Kubernetes environments. Always review security configurations and adjust permissions based on your specific requirements.
+ 

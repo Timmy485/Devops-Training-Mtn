@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  training-project:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: training-project-dev
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - API_KEY=dev-api-key-12345
+      - CORS_ORIGIN=http://localhost:3000
+      - LOG_LEVEL=debug
+      - MOMO_API_KEY=dev-momo-api-key
+      - MOMO_API_URL=http://localhost:8080/api
+      - MOMO_MERCHANT_ID=dev-merchant-123
+    volumes:
+      - ./logs:/usr/src/app/logs
+      - ./public/downloads:/usr/src/app/public/downloads
+    networks:
+      - training-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    container_name: training-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - training-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  training-network:
+    driver: bridge
+    name: training-network
+
+volumes:
+  redis-data:
+    driver: local 

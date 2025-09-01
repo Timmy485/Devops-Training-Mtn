@@ -1,0 +1,242 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devsecops-agent
+  namespace: ecodevsec
+  labels:
+    app: devsecops-agent
+    version: v1.0.0
+    component: agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devsecops-agent
+  template:
+    metadata:
+      labels:
+        app: devsecops-agent
+        version: v1.0.0
+        component: agent
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/health"
+    spec:
+      serviceAccountName: devsecops-agent-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: devsecops-agent
+        image: 600197618921.dkr.ecr.eu-west-2.amazonaws.com/ecobank:Agent-21
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3001
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: devsecops-agent-config
+        resources:
+          requests:
+            memory: "128Mi"
+          limits:
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 3001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - name: ecodevsec-agent-logs
+          mountPath: /usr/src/app/logs
+        - name: ecodevsec-agent-downloads
+          mountPath: /usr/src/app/public
+        - name: service-account
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+      volumes:
+      - name: ecodevsec-agent-logs
+        emptyDir: {}
+      - name: ecodevsec-agent-downloads
+        emptyDir: {}
+      - name: service-account
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: token
+          - configMap:
+              name: kube-root-ca.crt
+              items:
+              - key: ca.crt
+                path: ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devsecops-agent-service
+  namespace: ecodevsec
+  labels:
+    app: devsecops-agent
+    component: service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3001
+    targetPort: 3001
+    protocol: TCP
+    name: http
+  selector:
+    app: devsecops-agent
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: devsecops-agent-sa
+  namespace: ecodevsec
+  labels:
+    app: devsecops-agent
+    component: serviceaccount
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: devsecops-agent-role
+  labels:
+    app: devsecops-agent
+    component: clusterrole
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints", "namespaces", "nodes", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses", "networkpolicies"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["secrets", "configmaps", "persistentvolumeclaims", "persistentvolumes"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses", "networkpolicies"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["storageclasses"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: devsecops-agent-rolebinding
+  labels:
+    app: devsecops-agent
+    component: clusterrolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: devsecops-agent-role
+subjects:
+- kind: ServiceAccount
+  name: devsecops-agent-sa
+  namespace: ecodevsec
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devsecops-agent-config
+  namespace: ecodevsec
+  labels:
+    app: devsecops-agent
+    component: config
+data:
+  NODE_ENV: "production"
+  PORT: "3001"
+  API_KEY: "your-api-key-here"
+  CORS_ORIGIN: "https://your-webapp-domain.com"
+  LOG_LEVEL: "info"
+  COMMAND_TIMEOUT_MS: "30000"
+  MAX_COMMAND_OUTPUT_SIZE: "1048576"
+  DOWNLOADS_DIR: "/usr/src/app/public/downloads"
+  # Kubernetes cluster access - kubectl will auto-discover service account
+  KUBERNETES_SERVICE_HOST: ""
+  KUBERNETES_SERVICE_PORT: ""
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  generation: 1
+  labels:
+    objectset.rio.cattle.io/hash: da3f137750889a4862f15cd16e1b45c90a921740
+  name: ecodevsec-agent-ingress-internal
+  namespace: ecodevsec
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: >-
+        aa10fe19711ad4f1c9474c8176d723e7-e564c3c5e9b29ab0.elb.eu-west-2.amazonaws.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: devsecops-agent-service
+                port:
+                  number: 3001
+            path: /ecodevsec/agent(/|$)()(.*)
+            pathType: Prefix
