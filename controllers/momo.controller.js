@@ -12,7 +12,7 @@ const transferToMomoSubscriber = async (req, res) => {
       userAgent: req.get('User-Agent'),
       body: req.body
     });
-
+    console.log("hi");
     // TODO: Implement transfer to MoMo subscriber logic
     res.status(501).json({
       success: false,
