@@ -19,15 +19,19 @@ on:
         description: 'Branch condition for deployment'
         required: true
         type: string
+      docker_registry:
+        description: 'Docker registry URL'
+        required: true
+        type: string
+      image_name:
+        description: 'Docker image name'
+        required: true
+        type: string
     secrets:
       GITHUB_TOKEN:
         required: true
 
-env:
-  AWS_REGION: eu-west-2
-  DOCKER_REGISTRY: 600197618921.dkr.ecr.eu-west-2.amazonaws.com/ecobank
-  PROJECT_NAME: training-project
-  IMAGE_NAME: devsecops-training-${{ github.run_id }}
+
 
 jobs:
   deploy:
@@ -66,13 +70,13 @@ jobs:
           echo "    spec:" >> ${{ inputs.overlay_path }}/set-image.yaml
           echo "      containers:" >> ${{ inputs.overlay_path }}/set-image.yaml
           echo "        - name: ${{ inputs.deployment_name }}" >> ${{ inputs.overlay_path }}/set-image.yaml
-          echo "          image: ${{ env.DOCKER_REGISTRY }}:${{ env.IMAGE_NAME }}" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "          image: ${{ inputs.docker_registry }}:${{ inputs.image_name }}" >> ${{ inputs.overlay_path }}/set-image.yaml
 
       - name: Commit and push changes
         run: |
           cd deployment-artefacts/
           git add ${{ inputs.overlay_path }}/set-image.yaml ${{ inputs.overlay_path }}/deployment-final.yaml
-          git commit -m "Update ${{ inputs.environment }} deployment image to ${{ env.DOCKER_REGISTRY }}:${{ env.IMAGE_NAME }} [skip ci]"
+          git commit -m "Update ${{ inputs.environment }} deployment image to ${{ inputs.docker_registry }}:${{ inputs.image_name }} [skip ci]"
           git push
 
       - name: Upload deployment manifest
@@ -86,5 +90,5 @@ jobs:
         run: |
           echo "🚀 ${{ inputs.environment | upper }} Deployment Complete"
           echo "✅ Kustomize manifests built successfully"
-          echo "✅ Image updated to ${{ env.DOCKER_REGISTRY }}:${{ env.IMAGE_NAME }}"
+          echo "✅ Image updated to ${{ inputs.docker_registry }}:${{ inputs.image_name }}"
           echo "✅ Changes committed and pushed to repository"
