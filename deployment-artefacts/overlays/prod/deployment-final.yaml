@@ -8,32 +8,32 @@ spec:
     protocol: TCP
     targetPort: 3001
   selector:
-    app: ecodevsec-deployment
+    app: devops-training-deployment
   type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/name: ecodevsec-deployment
-  name: ecodevsec-deployment
+    app.kubernetes.io/name: devops-training-deployment
+  name: devops-training-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ecodevsec-deployment
+      app: devops-training-deployment
   template:
     metadata:
       labels:
-        app: ecodevsec-deployment
+        app: devops-training-deployment
     spec:
       containers:
       - envFrom:
         - configMapRef:
             name: ecodevsec-configmap
-        image: 600197618921.dkr.ecr.eu-west-2.amazonaws.com/ecobank:ecodevsec-32
+        image: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo:devsecops-training-latest
         imagePullPolicy: Always
-        name: ecodevsec-deployment
+        name: devops-training-deployment
         ports:
         - containerPort: 3001
           name: dls-port

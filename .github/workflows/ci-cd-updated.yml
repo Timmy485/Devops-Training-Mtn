@@ -112,7 +112,7 @@ jobs:
     with:
       environment: dev
       overlay_path: overlays/dev
-      deployment_name: training-project-dev-deployment
+      deployment_name: devops-training-deployment
       branch_condition: github.ref == 'refs/heads/master'
       docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
       image_name: devsecops-training-${{ github.run_id }}
@@ -124,7 +124,7 @@ jobs:
     with:
       environment: uat
       overlay_path: overlays/uat
-      deployment_name: training-project-uat-deployment
+      deployment_name: devops-training-deployment
       branch_condition: github.ref == 'refs/heads/master'
       docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
       image_name: devsecops-training-${{ github.run_id }}
@@ -136,7 +136,7 @@ jobs:
     with:
       environment: prod
       overlay_path: overlays/prod
-      deployment_name: training-project-prod-deployment
+      deployment_name: devops-training-deployment
       branch_condition: github.ref == 'refs/heads/master'
       docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
       image_name: devsecops-training-${{ github.run_id }}
