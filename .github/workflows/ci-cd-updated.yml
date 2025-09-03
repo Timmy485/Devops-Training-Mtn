@@ -103,6 +103,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+
   # Deploy to DEV environment
   deploy_dev:
     needs: [build-docker-push, scan-image, call-fortify-scan]
