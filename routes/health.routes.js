@@ -9,10 +9,10 @@ router.get('/', getHealth);
 // Detailed health information
 router.get('/detailed', getDetailedHealth);
 
-// Kubernetes readiness probe
+// Readiness probe
 router.get('/ready', getReadiness);
 
-// Kubernetes liveness probe
+// Liveness probe
 router.get('/live', getLiveness);
 
 export default router; 
