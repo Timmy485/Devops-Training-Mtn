@@ -92,7 +92,7 @@ jobs:
   call-fortify-scan:
     needs: [build-docker-push, scan-image]
     if: github.ref == 'refs/heads/dev'
-    uses: ./fortify-security-scan.yml
+    uses: ./.github/workflows/fortify-security-scan.yml
     with:
       image_name: devsecops-training-${{ github.run_id }}
       docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
@@ -106,7 +106,7 @@ jobs:
   # Deploy to DEV environment
   deploy_dev:
     needs: [build-docker-push, scan-image, call-fortify-scan]
-    uses: ./deploy.yml
+    uses: ./.github/workflows/deploy.yml
     with:
       environment: dev
       overlay_path: overlays/dev
@@ -120,7 +120,7 @@ jobs:
   # Deploy to UAT environment
   deploy_uat:
     needs: [build-docker-push, scan-image]
-    uses: ./deploy.yml
+    uses: ./.github/workflows/deploy.yml
     with:
       environment: uat
       overlay_path: overlays/uat
@@ -134,7 +134,7 @@ jobs:
   # Deploy to PROD environment
   deploy_prod:
     needs: [build-docker-push, scan-image]
-    uses: ./deploy.yml
+    uses: ./.github/workflows/deploy.yml
     with:
       environment: prod
       overlay_path: overlays/prod
