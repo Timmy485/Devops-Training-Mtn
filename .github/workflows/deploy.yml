@@ -1,0 +1,90 @@
+name: Deploy Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Target environment (dev, uat, prod)'
+        required: true
+        type: string
+      overlay_path:
+        description: 'Kustomize overlay path (e.g., overlays/dev, overlays/uat, overlays/prod)'
+        required: true
+        type: string
+      deployment_name:
+        description: 'Deployment name for the environment'
+        required: true
+        type: string
+      branch_condition:
+        description: 'Branch condition for deployment'
+        required: true
+        type: string
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+env:
+  AWS_REGION: eu-west-2
+  DOCKER_REGISTRY: 600197618921.dkr.ecr.eu-west-2.amazonaws.com/ecobank
+  PROJECT_NAME: training-project
+  IMAGE_NAME: devsecops-training-${{ github.run_id }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.branch_condition }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v1
+        with:
+          kustomize-version: '5.0.0'
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Build Kustomize manifests
+        run: |
+          cd deployment-artefacts/
+          kustomize build ${{ inputs.overlay_path }}/ > ${{ inputs.overlay_path }}/deployment-final.yaml
+
+      - name: Create set-image.yaml
+        run: |
+          cd deployment-artefacts/
+          echo "apiVersion: apps/v1" > ${{ inputs.overlay_path }}/set-image.yaml
+          echo "kind: Deployment" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "metadata:" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "  name: ${{ inputs.deployment_name }}" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "spec:" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "  template:" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "    spec:" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "      containers:" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "        - name: ${{ inputs.deployment_name }}" >> ${{ inputs.overlay_path }}/set-image.yaml
+          echo "          image: ${{ env.DOCKER_REGISTRY }}:${{ env.IMAGE_NAME }}" >> ${{ inputs.overlay_path }}/set-image.yaml
+
+      - name: Commit and push changes
+        run: |
+          cd deployment-artefacts/
+          git add ${{ inputs.overlay_path }}/set-image.yaml ${{ inputs.overlay_path }}/deployment-final.yaml
+          git commit -m "Update ${{ inputs.environment }} deployment image to ${{ env.DOCKER_REGISTRY }}:${{ env.IMAGE_NAME }} [skip ci]"
+          git push
+
+      - name: Upload deployment manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-manifest-${{ inputs.environment }}
+          path: deployment-artefacts/${{ inputs.overlay_path }}/deployment-final.yaml
+          retention-days: 1
+
+      - name: Deployment Summary
+        run: |
+          echo "🚀 ${{ inputs.environment | upper }} Deployment Complete"
+          echo "✅ Kustomize manifests built successfully"
+          echo "✅ Image updated to ${{ env.DOCKER_REGISTRY }}:${{ env.IMAGE_NAME }}"
+          echo "✅ Changes committed and pushed to repository"

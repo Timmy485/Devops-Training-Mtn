@@ -1,0 +1,620 @@
+{
+	"info": {
+		"_postman_id": "momo-api-collection-12345",
+		"name": "MoMo API - DevSecOps Agent",
+		"description": "Complete Postman collection for MoMo payment integration and financial services API endpoints. This collection covers all available MoMo operations including transfers, payments, airtime, data, and banking services.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345"
+	},
+	"item": [
+		{
+			"name": "Transfer Services",
+			"description": "Money transfer operations between MoMo subscribers and other networks",
+			"item": [
+				{
+					"name": "Transfer to MoMo Subscriber",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}",
+								"description": "API key for authentication"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"senderPhone\": \"233244123456\",\n  \"recipientPhone\": \"233244789012\",\n  \"amount\": 100.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Payment for services\",\n  \"reference\": \"TXN_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/transfer-to-subscriber",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"transfer-to-subscriber"
+							]
+						},
+						"description": "Transfer money from one MoMo subscriber to another MoMo subscriber. This endpoint handles peer-to-peer transfers within the MoMo network."
+					},
+					"response": []
+				},
+				{
+					"name": "Transfer to Other Network",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"senderPhone\": \"233244123456\",\n  \"recipientPhone\": \"233244789012\",\n  \"recipientNetwork\": \"VODAFONE\",\n  \"amount\": 50.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Cross-network transfer\",\n  \"reference\": \"CROSS_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/transfer-to-network",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"transfer-to-network"
+							]
+						},
+						"description": "Transfer money from MoMo to subscribers on other mobile money networks (Vodafone, AirtelTigo, etc.)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payment Services",
+			"description": "Bill payments and MoMo payment operations",
+			"item": [
+				{
+					"name": "MoMo and Bill Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"billType\": \"ELECTRICITY\",\n  \"billNumber\": \"ECG123456789\",\n  \"amount\": 75.50,\n  \"currency\": \"GHS\",\n  \"description\": \"Electricity bill payment\",\n  \"reference\": \"BILL_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/bill-payment",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"bill-payment"
+							]
+						},
+						"description": "Process bill payments using MoMo wallet. Supports various bill types including electricity, water, internet, and other utilities."
+					},
+					"response": []
+				},
+				{
+					"name": "MoMo Pay",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"merchantId\": \"{{merchant_id}}\",\n  \"amount\": 25.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Payment for goods\",\n  \"reference\": \"PAY_001_2024\",\n  \"callbackUrl\": \"https://your-domain.com/callback\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/pay",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"pay"
+							]
+						},
+						"description": "Process payments for goods and services using MoMo wallet. Includes merchant integration and callback support."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Airtime & Data Services",
+			"description": "Mobile airtime and data bundle purchases",
+			"item": [
+				{
+					"name": "Buy Airtime",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"amount\": 10.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Airtime purchase\",\n  \"reference\": \"AIRTIME_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/buy-airtime",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"buy-airtime"
+							]
+						},
+						"description": "Purchase airtime for any mobile number using MoMo wallet. Supports all major mobile networks in Ghana."
+					},
+					"response": []
+				},
+				{
+					"name": "Buy Data",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"dataBundle\": \"1GB_30DAYS\",\n  \"amount\": 15.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Data bundle purchase\",\n  \"reference\": \"DATA_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/buy-data",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"buy-data"
+							]
+						},
+						"description": "Purchase data bundles for any mobile number. Supports various bundle sizes and validity periods."
+					},
+					"response": []
+				},
+				{
+					"name": "Schedule Airtime",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"amount\": 20.00,\n  \"currency\": \"GHS\",\n  \"scheduleDate\": \"2024-01-15T08:00:00Z\",\n  \"description\": \"Scheduled airtime purchase\",\n  \"reference\": \"SCHED_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/schedule-airtime",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"schedule-airtime"
+							]
+						},
+						"description": "Schedule airtime purchases for future dates. Useful for recurring airtime top-ups."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Banking Services",
+			"description": "Bank to wallet and wallet to bank transfers",
+			"item": [
+				{
+					"name": "Bank to Wallet",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"bankAccount\": \"1234567890\",\n  \"bankCode\": \"GH001\",\n  \"amount\": 500.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Bank to wallet transfer\",\n  \"reference\": \"B2W_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/bank-to-wallet",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"bank-to-wallet"
+							]
+						},
+						"description": "Transfer money from bank account to MoMo wallet. Supports major banks in Ghana."
+					},
+					"response": []
+				},
+				{
+					"name": "Wallet to Bank",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"bankAccount\": \"1234567890\",\n  \"bankCode\": \"GH001\",\n  \"amount\": 300.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Wallet to bank transfer\",\n  \"reference\": \"W2B_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/wallet-to-bank",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"wallet-to-bank"
+							]
+						},
+						"description": "Transfer money from MoMo wallet to bank account. Includes account verification and transfer processing."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Account Services",
+			"description": "Account management and information services",
+			"item": [
+				{
+					"name": "Balance Check",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/momo/balance?phone=233244123456",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"balance"
+							],
+							"query": [
+								{
+									"key": "phone",
+									"value": "233244123456",
+									"description": "Phone number to check balance for"
+								}
+							]
+						},
+						"description": "Check MoMo wallet balance for a specific phone number. Returns current balance and account status."
+					},
+					"response": []
+				},
+				{
+					"name": "My Approvals",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/momo/approvals?phone=233244123456&status=pending",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"approvals"
+							],
+							"query": [
+								{
+									"key": "phone",
+									"value": "233244123456",
+									"description": "Phone number to get approvals for"
+								},
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "Filter by approval status (pending, approved, rejected)"
+								}
+							]
+						},
+						"description": "Get list of pending and processed approvals for a specific phone number. Useful for transaction tracking."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Financial Services",
+			"description": "Additional financial operations",
+			"item": [
+				{
+					"name": "Allow Cashout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"amount\": 1000.00,\n  \"currency\": \"GHS\",\n  \"cashoutType\": \"AGENT\",\n  \"agentCode\": \"AGT001\",\n  \"description\": \"Agent cashout request\",\n  \"reference\": \"CASHOUT_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/allow-cashout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"allow-cashout"
+							]
+						},
+						"description": "Process cashout requests from MoMo wallet to physical cash through authorized agents."
+					},
+					"response": []
+				},
+				{
+					"name": "Loan Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"loanAmount\": 500.00,\n  \"currency\": \"GHS\",\n  \"loanType\": \"SHORT_TERM\",\n  \"tenure\": 30,\n  \"purpose\": \"Business expansion\",\n  \"reference\": \"LOAN_001_2024\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/momo/loan-request",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"momo",
+								"loan-request"
+							]
+						},
+						"description": "Submit loan requests through MoMo platform. Includes credit assessment and loan processing."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script to set common headers and validate environment",
+					"if (!pm.environment.get('api_key')) {",
+					"    console.warn('API key not set in environment variables');",
+					"    pm.environment.set('api_key', 'dev-api-key-12345');",
+					"}",
+					"",
+					"if (!pm.environment.get('base_url')) {",
+					"    console.warn('Base URL not set in environment variables');",
+					"    pm.environment.set('base_url', 'http://localhost:3001');",
+					"}",
+					"",
+					"// Set timestamp for request tracking",
+					"pm.environment.set('timestamp', new Date().toISOString());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Test script to validate responses and set environment variables",
+					"pm.test('Response time is less than 5000ms', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"pm.test('Response has valid JSON structure', function () {",
+					"    pm.response.to.have.jsonBody();",
+					"});",
+					"",
+					"pm.test('Response contains success or error field', function () {",
+					"    const jsonData = pm.response.json();",
+					"    pm.expect(jsonData).to.have.property('success').or.have.property('error');",
+					"});",
+					"",
+					"// Log response for debugging",
+					"console.log('Response Status:', pm.response.status);",
+					"console.log('Response Body:', pm.response.json());",
+					"",
+					"// Set environment variables for successful responses",
+					"if (pm.response.code === 200 || pm.response.code === 201) {",
+					"    const jsonData = pm.response.json();",
+					"    if (jsonData.reference) {",
+					"        pm.environment.set('last_reference', jsonData.reference);",
+					"    }",
+					"    if (jsonData.timestamp) {",
+					"        pm.environment.set('last_timestamp', jsonData.timestamp);",
+					"    }",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3001",
+			"type": "string",
+			"description": "Base URL for the DevSecOps Agent API"
+		},
+		{
+			"key": "api_key",
+			"value": "dev-api-key-12345",
+			"type": "string",
+			"description": "API key for authentication (replace with your actual API key)"
+		},
+		{
+			"key": "merchant_id",
+			"value": "dev-merchant-123",
+			"type": "string",
+			"description": "Merchant ID for MoMo Pay operations"
+		},
+		{
+			"key": "customer_phone",
+			"value": "233244123456",
+			"type": "string",
+			"description": "Sample customer phone number for testing"
+		}
+	]
+} 

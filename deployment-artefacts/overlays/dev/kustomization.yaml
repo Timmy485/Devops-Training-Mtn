@@ -1,0 +1,6 @@
+resources:
+  - ../../base
+patches:
+  - path: set-image.yaml
+namePrefix: dev-
+namespace: dev
