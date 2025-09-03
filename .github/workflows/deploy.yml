@@ -27,6 +27,9 @@ on:
         description: 'Docker image name'
         required: true
         type: string
+    secrets:
+      REPO_TOKEN_PAT:
+        required: true
 
 
 
@@ -38,6 +41,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.REPO_TOKEN_PAT }}
 
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v1
@@ -73,7 +78,7 @@ jobs:
           cd deployment-artefacts/
           git add ${{ inputs.overlay_path }}/set-image.yaml ${{ inputs.overlay_path }}/deployment-final.yaml
           git commit -m "Update ${{ inputs.environment }} deployment image to ${{ inputs.docker_registry }}:${{ inputs.image_name }} [skip ci]"
-          git push
+          git push https://${{ secrets.REPO_TOKEN_PAT }}@github.com/${{ github.repository }}.git
 
       - name: Upload deployment manifest
         uses: actions/upload-artifact@v4
