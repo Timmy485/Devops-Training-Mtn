@@ -113,6 +113,8 @@ jobs:
       overlay_path: overlays/dev
       deployment_name: training-project-dev-deployment
       branch_condition: github.ref == 'refs/heads/dev'
+      docker_registry: ${{ env.DOCKER_REGISTRY }}
+      image_name: ${{ env.IMAGE_NAME }}
     secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -125,6 +127,8 @@ jobs:
       overlay_path: overlays/uat
       deployment_name: training-project-uat-deployment
       branch_condition: github.ref == 'refs/heads/uat'
+      docker_registry: ${{ env.DOCKER_REGISTRY }}
+      image_name: ${{ env.IMAGE_NAME }}
     secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -137,5 +141,7 @@ jobs:
       overlay_path: overlays/prod
       deployment_name: training-project-prod-deployment
       branch_condition: github.ref == 'refs/heads/prod'
+      docker_registry: ${{ env.DOCKER_REGISTRY }}
+      image_name: ${{ env.IMAGE_NAME }}
     secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
