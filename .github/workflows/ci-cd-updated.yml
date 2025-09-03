@@ -114,8 +114,6 @@ jobs:
       branch_condition: github.ref == 'refs/heads/dev'
       docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
       image_name: devsecops-training-${{ github.run_id }}
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Deploy to UAT environment
   deploy_uat:
@@ -128,8 +126,6 @@ jobs:
       branch_condition: github.ref == 'refs/heads/uat'
       docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
       image_name: devsecops-training-${{ github.run_id }}
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Deploy to PROD environment
   deploy_prod:
@@ -142,5 +138,3 @@ jobs:
       branch_condition: github.ref == 'refs/heads/prod'
       docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
       image_name: devsecops-training-${{ github.run_id }}
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
