@@ -1,5 +1,5 @@
 import express from 'express';
-import momoController from '../controllers/momo.controller.js';
+import * as momoController from '../controllers/momo.controller.js';
 
 const router = express.Router();
 

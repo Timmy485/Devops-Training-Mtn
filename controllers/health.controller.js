@@ -85,7 +85,7 @@ const getDetailedHealth = async (req, res) => {
 };
 
 /**
- * Get readiness status for Kubernetes probes
+ * Get readiness status for health probes
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
@@ -116,7 +116,7 @@ const getReadiness = async (req, res) => {
 };
 
 /**
- * Get liveness status for Kubernetes probes
+ * Get liveness status for health probes
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
