@@ -10,7 +10,6 @@ env:
   AWS_REGION: eu-central-1
   DOCKER_REGISTRY: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
   PROJECT_NAME: training-project
-  IMAGE_NAME: devsecops-training-${{ github.run_id }}
 
 jobs:
   build-docker-push:
@@ -38,9 +37,9 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ecobank
-          IMAGE_TAG: ${{ env.IMAGE_NAME }}
+          IMAGE_TAG: devsecops-training-${{ github.run_id }}
         run: |
-          echo "Image name is ${{ env.IMAGE_NAME }}"
+          echo "Image name is devsecops-training-${{ github.run_id }}"
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f Dockerfile .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
@@ -66,7 +65,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ steps.login-ecr.outputs.registry }}/ecobank:${{ env.IMAGE_NAME }}
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/ecobank:devsecops-training-${{ github.run_id }}
           format: 'json'
           output: 'trivy-report.json'
           severity: 'CRITICAL,HIGH'
@@ -95,9 +94,9 @@ jobs:
     if: github.ref == 'refs/heads/dev'
     uses: ./.github/workflows/fortify-security-scan.yml
     with:
-      image_name: ${{ env.IMAGE_NAME }}
-      docker_registry: ${{ env.DOCKER_REGISTRY }}
-      aws_region: ${{ env.AWS_REGION }}
+      image_name: devsecops-training-${{ github.run_id }}
+      docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
+      aws_region: eu-central-1
     secrets:
       FORTIFY_SCANCENTRAL_URL: ${{ secrets.FORTIFY_SCANCENTRAL_URL }}
       FORTIFY_TOKEN: ${{ secrets.FORTIFY_TOKEN }}
@@ -113,8 +112,8 @@ jobs:
       overlay_path: overlays/dev
       deployment_name: training-project-dev-deployment
       branch_condition: github.ref == 'refs/heads/dev'
-      docker_registry: ${{ env.DOCKER_REGISTRY }}
-      image_name: ${{ env.IMAGE_NAME }}
+      docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
+      image_name: devsecops-training-${{ github.run_id }}
     secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -127,8 +126,8 @@ jobs:
       overlay_path: overlays/uat
       deployment_name: training-project-uat-deployment
       branch_condition: github.ref == 'refs/heads/uat'
-      docker_registry: ${{ env.DOCKER_REGISTRY }}
-      image_name: ${{ env.IMAGE_NAME }}
+      docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
+      image_name: devsecops-training-${{ github.run_id }}
     secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -141,7 +140,7 @@ jobs:
       overlay_path: overlays/prod
       deployment_name: training-project-prod-deployment
       branch_condition: github.ref == 'refs/heads/prod'
-      docker_registry: ${{ env.DOCKER_REGISTRY }}
-      image_name: ${{ env.IMAGE_NAME }}
+      docker_registry: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo
+      image_name: devsecops-training-${{ github.run_id }}
     secrets:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
