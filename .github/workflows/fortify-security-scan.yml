@@ -1,0 +1,375 @@
+name: Fortify Security Scan (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        description: 'Docker image name to scan'
+        required: true
+        type: string
+      docker_registry:
+        description: 'Docker registry URL'
+        required: true
+        type: string
+      aws_region:
+        description: 'AWS region'
+        required: true
+        type: string
+    secrets:
+      FORTIFY_SCANCENTRAL_URL:
+        description: 'Fortify ScanCentral URL'
+        required: true
+      FORTIFY_TOKEN:
+        description: 'Fortify authentication token'
+        required: true
+      AWS_ACCESS_KEY_ID:
+        description: 'AWS access key'
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        description: 'AWS secret key'
+        required: true
+
+env:
+  FORTIFY_PROJECT_NAME: "devsecops-agent"
+  FORTIFY_APP_NAME: "momo-payment-api"
+  FORTIFY_APP_VERSION: ${{ github.sha }}
+
+jobs:
+  # SAST (Static Application Security Testing) Job
+  fortify-sast-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better SAST analysis
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm audit --audit-level=moderate
+
+      - name: Download Fortify ScanCentral CLI
+        run: |
+          curl -L -o scancentral.zip "${{ secrets.FORTIFY_SCANCENTRAL_URL }}/api/scancentral/scancentral.zip"
+          unzip scancentral.zip
+          chmod +x scancentral/bin/scancentral
+
+      - name: Configure Fortify ScanCentral
+        run: |
+          ./scancentral/bin/scancentral config -url "${{ secrets.FORTIFY_SCANCENTRAL_URL }}" -token "${{ secrets.FORTIFY_TOKEN }}"
+
+      - name: Run Fortify SAST Scan
+        id: sast-scan
+        run: |
+          echo "Starting Fortify SAST scan..."
+          ./scancentral/bin/scancentral scan \
+            -app "${{ env.FORTIFY_APP_NAME }}" \
+            -version "${{ env.FORTIFY_APP_VERSION }}" \
+            -b "${{ env.FORTIFY_PROJECT_NAME }}" \
+            -scan-type "SCA" \
+            -upload \
+            -o scancentral-sast.json \
+            .
+          
+          # Extract scan ID for later use
+          SCAN_ID=$(jq -r '.scanId' scancentral-sast.json)
+          echo "scan_id=$SCAN_ID" >> $GITHUB_OUTPUT
+          echo "SAST Scan ID: $SCAN_ID"
+
+      - name: Wait for SAST Scan Completion
+        run: |
+          echo "Waiting for SAST scan to complete..."
+          SCAN_ID="${{ steps.sast-scan.outputs.scan_id }}"
+          
+          for i in {1..30}; do
+            STATUS=$(./scancentral/bin/scancentral status -scan-id "$SCAN_ID" -o status.json && jq -r '.status' status.json)
+            echo "SAST Scan Status: $STATUS"
+            
+            if [ "$STATUS" = "COMPLETED" ]; then
+              echo "SAST scan completed successfully"
+              break
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "SAST scan failed"
+              exit 1
+            fi
+            
+            sleep 30
+          done
+
+      - name: Download SAST Scan Results
+        run: |
+          SCAN_ID="${{ steps.sast-scan.outputs.scan_id }}"
+          ./scancentral/bin/scancentral download -scan-id "$SCAN_ID" -o sast-results.fpr
+
+      - name: Upload SAST Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortify-sast-results
+          path: |
+            sast-results.fpr
+            scancentral-sast.json
+            status.json
+          retention-days: 30
+
+      - name: Parse SAST Results
+        run: |
+          echo "Parsing SAST scan results..."
+          # Extract critical findings count
+          CRITICAL_COUNT=$(./scancentral/bin/scancentral status -scan-id "${{ steps.sast-scan.outputs.scan_id }}" -o results.json && jq -r '.issueCounts.Critical // 0' results.json)
+          HIGH_COUNT=$(./scancentral/bin/scancentral status -scan-id "${{ steps.sast-scan.outputs.scan_id }}" -o results.json && jq -r '.issueCounts.High // 0' results.json)
+          
+          echo "SAST Results Summary:"
+          echo "Critical Issues: $CRITICAL_COUNT"
+          echo "High Issues: $HIGH_COUNT"
+          
+          # Fail if critical issues found
+          if [ "$CRITICAL_COUNT" -gt 0 ]; then
+            echo "❌ SAST scan failed: $CRITICAL_COUNT critical issues found"
+            exit 1
+          elif [ "$HIGH_COUNT" -gt 5 ]; then
+            echo "⚠️ SAST scan warning: $HIGH_COUNT high issues found (threshold: 5)"
+            exit 1
+          else
+            echo "✅ SAST scan passed: No critical issues, $HIGH_COUNT high issues"
+          fi
+
+  # DAST (Dynamic Application Security Testing) Job
+  fortify-dast-scan:
+    runs-on: ubuntu-latest
+    needs: [fortify-sast-scan]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Deploy Application for DAST Testing
+        run: |
+          echo "Deploying application for DAST testing..."
+          # Pull the latest image
+          docker pull ${{ inputs.docker_registry }}:${{ inputs.image_name }}
+          
+          # Run the application container
+          docker run -d \
+            --name dast-test-app \
+            -p 3001:3001 \
+            -e NODE_ENV=development \
+            -e PORT=3001 \
+            -e API_KEY=test-api-key \
+            -e CORS_ORIGIN=http://localhost:3000 \
+            -e LOG_LEVEL=debug \
+            -e MOMO_API_KEY=test-momo-api-key \
+            -e MOMO_API_URL=http://localhost:8080/api \
+            -e MOMO_MERCHANT_ID=test-merchant-123 \
+            ${{ inputs.docker_registry }}:${{ inputs.image_name }}
+
+      - name: Wait for Application to Start
+        run: |
+          echo "Waiting for application to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3001/health > /dev/null 2>&1; then
+              echo "Application is ready for DAST testing"
+              break
+            fi
+            echo "Attempt $i: Application not ready yet..."
+            sleep 10
+          done
+
+      - name: Download Fortify ScanCentral CLI
+        run: |
+          curl -L -o scancentral.zip "${{ secrets.FORTIFY_SCANCENTRAL_URL }}/api/scancentral/scancentral.zip"
+          unzip scancentral.zip
+          chmod +x scancentral/bin/scancentral
+
+      - name: Configure Fortify ScanCentral
+        run: |
+          ./scancentral/bin/scancentral config -url "${{ secrets.FORTIFY_SCANCENTRAL_URL }}" -token "${{ secrets.FORTIFY_TOKEN }}"
+
+      - name: Run Fortify DAST Scan
+        id: dast-scan
+        run: |
+          echo "Starting Fortify DAST scan..."
+          ./scancentral/bin/scancentral scan \
+            -app "${{ env.FORTIFY_APP_NAME }}" \
+            -version "${{ env.FORTIFY_APP_VERSION }}" \
+            -b "${{ env.FORTIFY_PROJECT_NAME }}" \
+            -scan-type "DAST" \
+            -upload \
+            -o scancentral-dast.json \
+            -target-url "http://localhost:3001" \
+            -scan-options "{\"scanTimeout\": 1800, \"maxScanTime\": 1800}"
+          
+          # Extract scan ID for later use
+          SCAN_ID=$(jq -r '.scanId' scancentral-dast.json)
+          echo "scan_id=$SCAN_ID" >> $GITHUB_OUTPUT
+          echo "DAST Scan ID: $SCAN_ID"
+
+      - name: Wait for DAST Scan Completion
+        run: |
+          echo "Waiting for DAST scan to complete..."
+          SCAN_ID="${{ steps.dast-scan.outputs.scan_id }}"
+          
+          for i in {1..60}; do
+            STATUS=$(./scancentral/bin/scancentral status -scan-id "$SCAN_ID" -o status.json && jq -r '.status' status.json)
+            echo "DAST Scan Status: $STATUS"
+            
+            if [ "$STATUS" = "COMPLETED" ]; then
+              echo "DAST scan completed successfully"
+              break
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "DAST scan failed"
+              exit 1
+            fi
+            
+            sleep 30
+          done
+
+      - name: Download DAST Scan Results
+        run: |
+          SCAN_ID="${{ steps.dast-scan.outputs.scan_id }}"
+          ./scancentral/bin/scancentral download -scan-id "$SCAN_ID" -o dast-results.fpr
+
+      - name: Upload DAST Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortify-dast-results
+          path: |
+            dast-results.fpr
+            scancentral-dast.json
+            status.json
+          retention-days: 30
+
+      - name: Parse DAST Results
+        run: |
+          echo "Parsing DAST scan results..."
+          # Extract critical findings count
+          CRITICAL_COUNT=$(./scancentral/bin/scancentral status -scan-id "${{ steps.dast-scan.outputs.scan_id }}" -o results.json && jq -r '.issueCounts.Critical // 0' results.json)
+          HIGH_COUNT=$(./scancentral/bin/scancentral status -scan-id "${{ steps.dast-scan.outputs.scan_id }}" -o results.json && jq -r '.issueCounts.High // 0' results.json)
+          
+          echo "DAST Results Summary:"
+          echo "Critical Issues: $CRITICAL_COUNT"
+          echo "High Issues: $HIGH_COUNT"
+          
+          # Fail if critical issues found
+          if [ "$CRITICAL_COUNT" -gt 0 ]; then
+            echo "❌ DAST scan failed: $CRITICAL_COUNT critical issues found"
+            exit 1
+          elif [ "$HIGH_COUNT" -gt 3 ]; then
+            echo "⚠️ DAST scan warning: $HIGH_COUNT high issues found (threshold: 3)"
+            exit 1
+          else
+            echo "✅ DAST scan passed: No critical issues, $HIGH_COUNT high issues"
+          fi
+
+      - name: Cleanup Test Environment
+        if: always()
+        run: |
+          echo "Cleaning up test environment..."
+          docker stop dast-test-app || true
+          docker rm dast-test-app || true
+
+  # Security Summary Job
+  security-summary:
+    runs-on: ubuntu-latest
+    needs: [fortify-sast-scan, fortify-dast-scan]
+    if: always()
+    steps:
+      - name: Download SAST Results
+        uses: actions/download-artifact@v4
+        with:
+          name: fortify-sast-results
+          path: ./sast-results
+
+      - name: Download DAST Results
+        uses: actions/download-artifact@v4
+        with:
+          name: fortify-dast-results
+          path: ./dast-results
+
+      - name: Generate Security Report
+        run: |
+          echo "# 🔒 Security Scan Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "## 📊 Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # SAST Results
+          if [ -f "./sast-results/status.json" ]; then
+            echo "### 🔍 SAST (Static Analysis)" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            CRITICAL=$(jq -r '.issueCounts.Critical // 0' ./sast-results/status.json)
+            HIGH=$(jq -r '.issueCounts.High // 0' ./sast-results/status.json)
+            MEDIUM=$(jq -r '.issueCounts.Medium // 0' ./sast-results/status.json)
+            LOW=$(jq -r '.issueCounts.Low // 0' ./sast-results/status.json)
+            echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # DAST Results
+          if [ -f "./dast-results/status.json" ]; then
+            echo "### 🌐 DAST (Dynamic Analysis)" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            CRITICAL=$(jq -r '.issueCounts.Critical // 0' ./dast-results/status.json)
+            HIGH=$(jq -r '.issueCounts.High // 0' ./dast-results/status.json)
+            MEDIUM=$(jq -r '.issueCounts.Medium // 0' ./dast-results/status.json)
+            LOW=$(jq -r '.issueCounts.Low // 0' ./dast-results/status.json)
+            echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+            echo "| Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+            echo "| Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "## 📁 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- SAST Results: fortify-sast-results" >> $GITHUB_STEP_SUMMARY
+          echo "- DAST Results: fortify-dast-results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** Detailed reports are available in the workflow artifacts." >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let comment = '## 🔒 Security Scan Results\n\n';
+            comment += 'Fortify security scans have completed for this PR.\n\n';
+            comment += '### Scan Summary:\n';
+            comment += '- ✅ SAST (Static Analysis) - Completed\n';
+            comment += '- ✅ DAST (Dynamic Analysis) - Completed\n\n';
+            comment += 'Detailed results are available in the workflow artifacts.\n\n';
+            comment += '**Note:** This scan runs automatically on the dev branch.';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

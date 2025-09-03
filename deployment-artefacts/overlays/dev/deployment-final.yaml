@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecodevsec-svc
+spec:
+  ports:
+  - port: 3001
+    protocol: TCP
+    targetPort: 3001
+  selector:
+    app: ecodevsec-deployment
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: ecodevsec-deployment
+  name: ecodevsec-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecodevsec-deployment
+  template:
+    metadata:
+      labels:
+        app: ecodevsec-deployment
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: ecodevsec-configmap
+        image: 600197618921.dkr.ecr.eu-west-2.amazonaws.com/ecobank:ecodevsec-32
+        imagePullPolicy: Always
+        name: ecodevsec-deployment
+        ports:
+        - containerPort: 3001
+          name: dls-port
+          protocol: TCP
+        resources:
+          limits:
+            memory: 1200Mi
+          requests:
+            memory: 1000Mi
+      volumes:
+      - configMap:
+          items:
+          - key: application.properties
+            path: application.properties
+          name: ecodevsec-configmap
+        name: ecodevsec-volume
