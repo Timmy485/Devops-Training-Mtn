@@ -1,14 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ecodevsec-svc
+  name: uat-ecodevsec-svc
+  namespace: uat
 spec:
   ports:
   - port: 3001
     protocol: TCP
     targetPort: 3001
   selector:
-    app: devops-training-deployment
+    app: ecodevsec-deployment
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -16,7 +17,8 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: devops-training-deployment
-  name: devops-training-deployment
+  name: uat-devops-training-deployment
+  namespace: uat
 spec:
   replicas: 1
   selector:
