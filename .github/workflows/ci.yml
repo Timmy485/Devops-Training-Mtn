@@ -92,7 +92,7 @@ jobs:
   # Call Fortify Security Scan Workflow
   call-fortify-scan:
     needs: [build-docker-push, scan-image]
-    if: github.ref == 'refs/heads/dev'
+    if: false  # Temporarily disabled - set to 'github.ref == 'refs/heads/dev'' when Fortify is configured
     uses: ./.github/workflows/fortify-security-scan.yml
     with:
       image_name: devsecops-training-${{ github.run_id }}
