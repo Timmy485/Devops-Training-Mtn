@@ -54,11 +54,6 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Build Kustomize manifests
-        run: |
-          cd deployment-artefacts/
-          kustomize build ${{ inputs.overlay_path }}/ > ${{ inputs.overlay_path }}/deployment-final.yaml
-
       - name: Create set-image.yaml
         run: |
           cd deployment-artefacts/
@@ -72,6 +67,11 @@ jobs:
           echo "      containers:" >> ${{ inputs.overlay_path }}/set-image.yaml
           echo "        - name: ${{ inputs.deployment_name }}" >> ${{ inputs.overlay_path }}/set-image.yaml
           echo "          image: ${{ inputs.docker_registry }}:${{ inputs.image_name }}" >> ${{ inputs.overlay_path }}/set-image.yaml
+
+      - name: Build Kustomize manifests
+        run: |
+          cd deployment-artefacts/
+          kustomize build ${{ inputs.overlay_path }}/ > ${{ inputs.overlay_path }}/deployment-final.yaml
 
       - name: Commit and push changes
         run: |
