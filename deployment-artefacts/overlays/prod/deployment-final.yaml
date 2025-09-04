@@ -1,14 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ecodevsec-svc
+  name: prod-ecodevsec-svc
+  namespace: prod
 spec:
   ports:
   - port: 3001
     protocol: TCP
     targetPort: 3001
   selector:
-    app: devops-training-deployment
+    app: ecodevsec-deployment
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -16,7 +17,8 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: devops-training-deployment
-  name: devops-training-deployment
+  name: prod-devops-training-deployment
+  namespace: prod
 spec:
   replicas: 1
   selector:
@@ -31,7 +33,7 @@ spec:
       - envFrom:
         - configMapRef:
             name: ecodevsec-configmap
-        image: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo:devsecops-training-latest
+        image: 269700396904.dkr.ecr.eu-central-1.amazonaws.com/training-repo:devsecops-training-17462770397
         imagePullPolicy: Always
         name: devops-training-deployment
         ports:
