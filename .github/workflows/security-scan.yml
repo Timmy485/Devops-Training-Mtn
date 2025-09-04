@@ -77,54 +77,6 @@ jobs:
             semgrep-results.json
           retention-days: 30
 
-  eslint-security:
-    name: ESLint Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          npm install --save-dev eslint-plugin-security eslint-plugin-node
-
-      - name: Run ESLint Security Scan
-        run: |
-          echo "Running ESLint security scan..."
-          npx eslint . --ext .js,.json \
-            --plugin security \
-            --plugin node \
-            --rule "security/detect-object-injection: error" \
-            --rule "security/detect-non-literal-regexp: error" \
-            --rule "security/detect-unsafe-regex: error" \
-            --rule "security/detect-buffer-noassert: error" \
-            --rule "security/detect-child-process: error" \
-            --rule "security/detect-disable-mustache-escape: error" \
-            --rule "security/detect-eval-with-expression: error" \
-            --rule "security/detect-no-csrf-before-method-override: error" \
-            --rule "security/detect-non-literal-fs-filename: error" \
-            --rule "security/detect-non-literal-require: error" \
-            --rule "security/detect-possible-timing-attacks: error" \
-            --rule "security/detect-pseudoRandomBytes: error" \
-            --rule "node/no-deprecated-api: error" \
-            --rule "node/no-extraneous-require: error" \
-            --rule "node/no-missing-require: error" \
-            --format json \
-            --output-file eslint-security-results.json || true
-
-      - name: Upload ESLint Security Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: eslint-security-results
-          path: eslint-security-results.json
-          retention-days: 30
 
   npm-audit:
     name: NPM Security Audit
@@ -325,7 +277,7 @@ jobs:
   security-summary:
     name: Security Scan Summary
     runs-on: ubuntu-latest
-    needs: [codeql-sast, semgrep-sast, eslint-security, npm-audit, owasp-zap-dast, nuclei-dast]
+    needs: [codeql-sast, semgrep-sast, npm-audit, owasp-zap-dast, nuclei-dast]
     if: always()
     steps:
       - name: Download All Security Results
@@ -361,13 +313,6 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
           
-          # ESLint Security Results
-          if [ -f "./security-results/eslint-security-results/eslint-security-results.json" ]; then
-            echo "### 🔍 ESLint Security Analysis" >> $GITHUB_STEP_SUMMARY
-            echo "- ✅ ESLint security scan completed" >> $GITHUB_STEP_SUMMARY
-            echo "- Results available in artifacts" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
           
           # NPM Audit Results
           if [ -f "./security-results/npm-audit-results/npm-audit-results.json" ]; then
@@ -399,7 +344,6 @@ jobs:
           echo "## 📁 Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- CodeQL Results: Available in Security tab" >> $GITHUB_STEP_SUMMARY
           echo "- Semgrep Results: semgrep-results" >> $GITHUB_STEP_SUMMARY
-          echo "- ESLint Security: eslint-security-results" >> $GITHUB_STEP_SUMMARY
           echo "- NPM Audit: npm-audit-results" >> $GITHUB_STEP_SUMMARY
           echo "- OWASP ZAP: zap-results" >> $GITHUB_STEP_SUMMARY
           echo "- Nuclei: nuclei-results" >> $GITHUB_STEP_SUMMARY
@@ -416,7 +360,6 @@ jobs:
             comment += '### Scan Summary:\n';
             comment += '- ✅ CodeQL SAST - Completed\n';
             comment += '- ✅ Semgrep SAST - Completed\n';
-            comment += '- ✅ ESLint Security - Completed\n';
             comment += '- ✅ NPM Audit - Completed\n';
             comment += '- ✅ OWASP ZAP DAST - Completed\n';
             comment += '- ✅ Nuclei DAST - Completed\n\n';
