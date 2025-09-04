@@ -16,12 +16,8 @@ This document describes the comprehensive security scanning setup using free and
    - Optional: Sign up at [semgrep.dev](https://semgrep.dev) for better results
    - Free tier available
 
-3. **ESLint Security Plugin** - JavaScript-specific security rules
-   - Detects common Node.js security issues
-   - Scans for unsafe patterns and vulnerabilities
-   - Configured in `.eslintrc.security.js`
 
-4. **NPM Audit** - Dependency vulnerability scanning
+3. **NPM Audit** - Dependency vulnerability scanning
    - Scans for known vulnerabilities in npm packages
    - Checks both development and production dependencies
 
@@ -68,9 +64,6 @@ The security scanning workflow will automatically install additional tools durin
 You can run security scans locally:
 
 ```bash
-# ESLint Security Scan
-npx eslint . --config .eslintrc.security.js
-
 # NPM Audit
 npm audit --audit-level=moderate
 
@@ -90,22 +83,11 @@ npm audit --audit-level=moderate --production
 ### **Artifact Files**
 
 - `semgrep-results/` - Semgrep scan results
-- `eslint-security-results/` - ESLint security findings
 - `npm-audit-results/` - Dependency vulnerability reports
 - `zap-results/` - OWASP ZAP scan reports
 - `nuclei-results/` - Nuclei vulnerability scan results
 
 ## 🔧 Configuration
-
-### **ESLint Security Rules**
-
-The `.eslintrc.security.js` file contains security-specific rules:
-
-- **Object injection detection**
-- **Unsafe regex patterns**
-- **Child process vulnerabilities**
-- **File system security issues**
-- **Timing attack detection**
 
 ### **OWASP ZAP Rules**
 
@@ -132,7 +114,6 @@ Nuclei uses these template categories:
 
 - **Critical Issues**: Pipeline fails immediately
 - **High Issues**: 
-  - ESLint: 5+ issues fail pipeline
   - DAST: 3+ issues fail pipeline
 - **Medium/Low Issues**: Warnings only
 
@@ -142,8 +123,8 @@ Edit the security workflow to adjust thresholds:
 
 ```yaml
 # In security-scan.yml
-if [ "$HIGH_COUNT" -gt 5 ]; then
-  echo "⚠️ SAST scan warning: $HIGH_COUNT high issues found (threshold: 5)"
+if [ "$HIGH_COUNT" -gt 3 ]; then
+  echo "⚠️ DAST scan warning: $HIGH_COUNT high issues found (threshold: 3)"
   exit 1
 fi
 ```
@@ -171,7 +152,7 @@ graph TD
 | Feature | Free Tools | Fortify |
 |---------|------------|---------|
 | **Cost** | Free | Commercial |
-| **SAST** | CodeQL, Semgrep, ESLint | Fortify SCA |
+| **SAST** | CodeQL, Semgrep | Fortify SCA |
 | **DAST** | OWASP ZAP, Nuclei | Fortify WebInspect |
 | **Setup** | Minimal | Complex |
 | **Maintenance** | Community | Vendor support |
@@ -232,7 +213,6 @@ graph TD
 - [Nuclei Templates](https://github.com/projectdiscovery/nuclei-templates)
 - [Semgrep Rules](https://semgrep.dev/rules)
 - [CodeQL Documentation](https://codeql.github.com/docs/)
-- [ESLint Security Plugin](https://github.com/eslint-community/eslint-plugin-security)
 
 ---
 

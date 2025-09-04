@@ -10,7 +10,6 @@
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
-    "lint": "eslint .",
     "docker:build": "docker build -t devsecops-agent .",
     "docker:run": "docker run -p 3001:3001 --name devsecops-agent devsecops-agent"
   },
@@ -41,9 +40,6 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "eslint": "^8.56.0",
-    "eslint-plugin-security": "^1.7.1",
-    "eslint-plugin-node": "^11.1.0",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
     "supertest": "^6.3.3"
