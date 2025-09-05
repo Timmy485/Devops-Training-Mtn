@@ -17,8 +17,8 @@ kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/name: devops-training-deployment
-  name: prod-devops-training-deployment
-  namespace: prod
+  name: devops-training-deployment
+  namespace: mtn-mobile-money
 spec:
   replicas: 1
   selector:
@@ -45,10 +45,4 @@ spec:
             memory: 1200Mi
           requests:
             memory: 1000Mi
-      volumes:
-      - configMap:
-          items:
-          - key: application.properties
-            path: application.properties
-          name: ecodevsec-configmap
-        name: ecodevsec-volume
+

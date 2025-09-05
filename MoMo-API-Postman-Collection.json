@@ -192,7 +192,11 @@
 						],
 						"body": {
 							"mode": "raw",
+<<<<<<< HEAD
 							"raw": "{\n  \"phoneNumber\": \"+233241234567\",\n  \"amount\": 10.00,\n  \"network\": \"MTN\",\n  \"reference\": \"AIRTIME_001_2024\"\n}",
+=======
+							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"amount\": 10.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Airtime purchase\",\n  \"reference\": \"AIRTIME_001_2024\"\n}",
+>>>>>>> 9b0fe5de242761fe56a74b55399070b6324a4937
 							"options": {
 								"raw": {
 									"language": "json"
@@ -210,6 +214,7 @@
 								"buy-airtime"
 							]
 						},
+<<<<<<< HEAD
 						"description": "Purchase airtime for any mobile number using MoMo wallet. Supports all major mobile networks in Ghana (MTN, VODAFONE, AIRTELTIGO). Phone number format: +233XXXXXXXXX or 0XXXXXXXXX"
 					},
 					"response": [
@@ -449,6 +454,11 @@
 							"body": "{\n  \"success\": false,\n  \"error\": \"Buy airtime failed\",\n  \"message\": \"An internal server error occurred while processing your airtime purchase\",\n  \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n}"
 						}
 					]
+=======
+						"description": "Purchase airtime for any mobile number using MoMo wallet. Supports all major mobile networks in Ghana."
+					},
+					"response": []
+>>>>>>> 9b0fe5de242761fe56a74b55399070b6324a4937
 				},
 				{
 					"name": "Buy Data",
