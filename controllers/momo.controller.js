@@ -100,17 +100,91 @@ const buyAirtime = async (req, res) => {
       body: req.body
     });
 
-    // TODO: Implement buy airtime logic
-    res.status(501).json({
-      success: false,
-      message: 'Buy airtime not implemented yet',
+    // Extract request parameters
+    const { phoneNumber, amount, network, reference } = req.body;
+
+    // Validate required parameters
+    if (!phoneNumber || !amount || !network) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required parameters: phoneNumber, amount, and network are required',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Validate phone number format (basic validation)
+    const phoneRegex = /^(\+233|0)[0-9]{9}$/;
+    if (!phoneRegex.test(phoneNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid phone number format. Use format: +233XXXXXXXXX or 0XXXXXXXXX',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Validate amount (should be positive number)
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid amount. Amount must be a positive number',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Validate network
+    const validNetworks = ['MTN', 'VODAFONE', 'AIRTELTIGO'];
+    if (!validNetworks.includes(network.toUpperCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid network. Supported networks: MTN, VODAFONE, AIRTELTIGO',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Generate mock transaction details
+    const transactionId = `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const mockReference = reference || `REF${Date.now()}`;
+    const processingFee = Math.min(numericAmount * 0.01, 2.5); // 1% fee, max 2.5 GHS
+    const totalAmount = numericAmount + processingFee;
+
+    // Mock successful airtime purchase response
+    const response = {
+      success: true,
+      message: 'Airtime purchase successful',
+      data: {
+        transactionId,
+        reference: mockReference,
+        phoneNumber,
+        network: network.toUpperCase(),
+        amount: numericAmount,
+        processingFee,
+        totalAmount,
+        status: 'COMPLETED',
+        timestamp: new Date().toISOString(),
+        balance: {
+          before: 150.75,
+          after: 150.75 - totalAmount
+        }
+      },
       timestamp: new Date().toISOString()
+    };
+
+    logger.info('Airtime purchase successful', {
+      transactionId,
+      phoneNumber,
+      amount: numericAmount,
+      network: network.toUpperCase(),
+      totalAmount
     });
+
+    res.status(200).json(response);
   } catch (error) {
-    logger.error('Buy airtime failed', { error: error.message });
+    logger.error('Buy airtime failed', { error: error.message, stack: error.stack });
     res.status(500).json({
       success: false,
       error: 'Buy airtime failed',
+      message: 'An internal server error occurred while processing your airtime purchase',
       timestamp: new Date().toISOString()
     });
   }

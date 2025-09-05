@@ -192,7 +192,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"customerPhone\": \"233244123456\",\n  \"amount\": 10.00,\n  \"currency\": \"GHS\",\n  \"description\": \"Airtime purchase\",\n  \"reference\": \"AIRTIME_001_2024\"\n}",
+							"raw": "{\n  \"phoneNumber\": \"+233241234567\",\n  \"amount\": 10.00,\n  \"network\": \"MTN\",\n  \"reference\": \"AIRTIME_001_2024\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -210,9 +210,245 @@
 								"buy-airtime"
 							]
 						},
-						"description": "Purchase airtime for any mobile number using MoMo wallet. Supports all major mobile networks in Ghana."
+						"description": "Purchase airtime for any mobile number using MoMo wallet. Supports all major mobile networks in Ghana (MTN, VODAFONE, AIRTELTIGO). Phone number format: +233XXXXXXXXX or 0XXXXXXXXX"
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Successful Airtime Purchase",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{api_key}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phoneNumber\": \"+233241234567\",\n  \"amount\": 10.00,\n  \"network\": \"MTN\",\n  \"reference\": \"AIRTIME_001_2024\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/momo/buy-airtime",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"momo",
+										"buy-airtime"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Airtime purchase successful\",\n  \"data\": {\n    \"transactionId\": \"TXN1703123456789123\",\n    \"reference\": \"AIRTIME_001_2024\",\n    \"phoneNumber\": \"+233241234567\",\n    \"network\": \"MTN\",\n    \"amount\": 10.00,\n    \"processingFee\": 0.10,\n    \"totalAmount\": 10.10,\n    \"status\": \"COMPLETED\",\n    \"timestamp\": \"2024-01-01T12:00:00.000Z\",\n    \"balance\": {\n      \"before\": 150.75,\n      \"after\": 140.65\n    }\n  },\n  \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n}"
+						},
+						{
+							"name": "Validation Error - Missing Parameters",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{api_key}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phoneNumber\": \"+233241234567\",\n  \"amount\": 10.00\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/momo/buy-airtime",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"momo",
+										"buy-airtime"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"message\": \"Missing required parameters: phoneNumber, amount, and network are required\",\n  \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n}"
+						},
+						{
+							"name": "Validation Error - Invalid Phone Number",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{api_key}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phoneNumber\": \"123456789\",\n  \"amount\": 10.00,\n  \"network\": \"MTN\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/momo/buy-airtime",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"momo",
+										"buy-airtime"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"message\": \"Invalid phone number format. Use format: +233XXXXXXXXX or 0XXXXXXXXX\",\n  \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n}"
+						},
+						{
+							"name": "Validation Error - Invalid Network",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{api_key}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phoneNumber\": \"+233241234567\",\n  \"amount\": 10.00,\n  \"network\": \"INVALID_NETWORK\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/momo/buy-airtime",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"momo",
+										"buy-airtime"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"message\": \"Invalid network. Supported networks: MTN, VODAFONE, AIRTELTIGO\",\n  \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n}"
+						},
+						{
+							"name": "Server Error",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "X-API-Key",
+										"value": "{{api_key}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phoneNumber\": \"+233241234567\",\n  \"amount\": 10.00,\n  \"network\": \"MTN\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/api/momo/buy-airtime",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"momo",
+										"buy-airtime"
+									]
+								}
+							},
+							"status": "Internal Server Error",
+							"code": 500,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"error\": \"Buy airtime failed\",\n  \"message\": \"An internal server error occurred while processing your airtime purchase\",\n  \"timestamp\": \"2024-01-01T12:00:00.000Z\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Buy Data",
