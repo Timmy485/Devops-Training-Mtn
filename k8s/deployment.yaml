@@ -195,8 +195,8 @@ subjects:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: devsecops-agent-config
-  namespace: ecodevsec
+  name: ecodevsec-configmap
+  namespace: 
   labels:
     app: devsecops-agent
     component: config
